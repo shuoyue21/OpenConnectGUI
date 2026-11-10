@@ -1189,4 +1189,54 @@ struct ProtocolAndProcessTests {
         let ipv6Req = try ipv6Auth.request(protocolType: "anyconnect", originalServer: "https://vpn.example.com")
         #expect(ipv6Req.server == "https://[2001:db8::1]")
     }
+
+    @Test func smartEndpointResolverFiltersFakeIPsAndPrefersDirectIPv4() throws {
+        // 1. Fake-IP (198.18.0.0/15) vs real public IPv4 classification
+        #expect(VPNEndpointResolver.isFakeOrUnusableIPv4("198.18.0.1"))
+        #expect(VPNEndpointResolver.isFakeOrUnusableIPv4("198.18.6.78"))
+        #expect(VPNEndpointResolver.isFakeOrUnusableIPv4("198.19.255.254"))
+        #expect(VPNEndpointResolver.isFakeOrUnusableIPv4("127.0.0.1"))
+        #expect(!VPNEndpointResolver.isFakeOrUnusableIPv4("1.13.176.57"))
+        #expect(!VPNEndpointResolver.isFakeOrUnusableIPv4("198.20.1.1"))
+
+        // 2. Physical default route extraction ignores utun interfaces
+        let sampleNetstat = """
+        Routing tables
+        Internet:
+        Destination        Gateway            Flags               Netif Expire
+        default            198.18.0.1         UGSc                utun6
+        default            10.52.48.1         UGScg                 en0
+        1                  198.18.0.1         UGSc                utun6
+        """
+        let route = VPNEndpointResolver.parsePhysicalDefaultRoute(from: sampleNetstat)
+        #expect(route?.interfaceName == "en0")
+        #expect(route?.gatewayIPv4 == "10.52.48.1")
+
+        // 3. DNS wire-format query & response parsing filters Fake-IP and extracts real IPv4
+        let query = try #require(VPNEndpointResolver.buildDNSQuery(host: "ywl.anylink.pub", qtype: 1, txid: 0x4242))
+        var response = Data()
+        response.append(contentsOf: [0x42, 0x42, 0x81, 0x80, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00])
+        response.append(query.dropFirst(12))
+        // Answer 1: Fake-IP 198.18.6.78 (must be filtered out)
+        response.append(contentsOf: [0xC0, 0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x04, 198, 18, 6, 78])
+        // Answer 2: Real IPv4 1.13.176.57 (must be retained)
+        response.append(contentsOf: [0xC0, 0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x04, 1, 13, 176, 57])
+        let parsedIPs = VPNEndpointResolver.parseDNSResponse(response, expectedTxid: 0x4242, expectedQType: 1)
+        #expect(parsedIPs == ["1.13.176.57"])
+
+        // 4. AuthenticationResult replaces slower IPv6 or Fake-IP RESOLVE with verified preferredResolve
+        let authWithIPv6 = try AuthenticationResult(data: Data("""
+        COOKIE='secret-cookie'
+        HOST='https://ywl.anylink.pub:22877/'
+        FINGERPRINT='pin-sha256:wKhQo3FVIHWQIOmJI0pLRNwjZYskw44jd7slr+XW4qg='
+        RESOLVE='ywl.anylink.pub:2402:4e00:c021:1900:22b6:7560:a232:1'
+        """.utf8))
+        let tunnelReq = try authWithIPv6.request(
+            protocolType: "anyconnect",
+            originalServer: "https://ywl.anylink.pub:22877",
+            preferredResolve: "ywl.anylink.pub:1.13.176.57"
+        )
+        #expect(tunnelReq.resolve == "ywl.anylink.pub:1.13.176.57")
+        #expect(VPNEndpointResolver.extractGatewayIP(from: tunnelReq) == "1.13.176.57")
+    }
 }

@@ -437,8 +437,10 @@ else # use route command
 		# route(s) match the VPN gateway, so we simply find a default
 		# route and use its gateway.
 		case "$VPNGATEWAY" in
-		*:*)	route add $route_syntax_inet6_host "$VPNGATEWAY" $route_syntax_gw "`get_ipv6_default_gw`";;
-		*)	route add -host "$VPNGATEWAY" $route_syntax_gw "`get_default_gw`";;
+		*:*)	route $route_syntax_del $route_syntax_inet6_host "$VPNGATEWAY" >/dev/null 2>&1 || true
+			route add $route_syntax_inet6_host "$VPNGATEWAY" $route_syntax_gw "`get_ipv6_default_gw`";;
+		*)	route $route_syntax_del -host "$VPNGATEWAY" >/dev/null 2>&1 || true
+			route add -host "$VPNGATEWAY" $route_syntax_gw "`get_default_gw`";;
 		esac
 	}
 
@@ -981,7 +983,9 @@ do_pre_init() {
 	elif [ "$OS" = "SunOS" ]; then
 		:
 	elif [ "$OS" = "Darwin" ]; then
-		:
+		if [ -n "$VPNGATEWAY" ]; then
+			set_vpngateway_route
+		fi
 	fi
 }
 

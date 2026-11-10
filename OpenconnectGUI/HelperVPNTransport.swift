@@ -34,17 +34,19 @@ final class HelperVPNTransport: NSObject, VPNTransport {
         }
         let work = Attempt(id: session, config: config, receive: receive)
         attempt = work
+        let targetServer = config.normalizedServer
         work.setupTask = Task { [weak self, weak work] in
             guard let self, let work else { return }
             do {
-                try await Task.detached(priority: .userInitiated) {
+                let resolvedEndpoint = try await Task.detached(priority: .userInitiated) {
                     try Self.ensureProtectedRuntimeProvisioned()
+                    return Self.resolveAndPrepareBestEndpoint(for: targetServer)
                 }.value
                 guard self.attempt === work, !work.cancelled else {
                     self.complete(work, .ended(VPNExitOutcome(status: 0)))
                     return
                 }
-                self.authenticate(work, password: password)
+                self.authenticate(work, password: password, resolvedEndpoint: resolvedEndpoint)
             } catch {
                 self.complete(
                     work,
@@ -71,7 +73,7 @@ final class HelperVPNTransport: NSObject, VPNTransport {
         }
     }
 
-    private func authenticate(_ work: Attempt, password: String) {
+    private func authenticate(_ work: Attempt, password: String, resolvedEndpoint: ResolvedGatewayEndpoint?) {
         guard !work.cancelled, attempt === work else { return }
         let server = work.config.normalizedServer
         guard TunnelRequest.validServer(server),
@@ -86,6 +88,10 @@ final class HelperVPNTransport: NSObject, VPNTransport {
         let auth = ManagedProcess(sessionID: work.id.uuidString)
         work.auth = auth
         work.receive(.connecting)
+        if let ep = resolvedEndpoint {
+            let rttText = ep.rttMs.map { String(format: " (%.1f ms)", $0) } ?? ""
+            work.receive(.output(Data("[Smart routing] Selected direct gateway \(ep.ip)\(rttText)\n".utf8)))
+        }
         var arguments = [
             "--authenticate", "--non-inter", "--passwd-on-stdin", "--no-system-trust",
             "--cafile=\(Self.effectiveCABundlePath())",
@@ -95,7 +101,11 @@ final class HelperVPNTransport: NSObject, VPNTransport {
         if let authGroup = work.config.trimmedAuthGroup {
             arguments.append("--authgroup=\(authGroup)")
         }
+        if let resolveArg = resolvedEndpoint?.resolveArgument {
+            arguments.append("--resolve=\(resolveArg)")
+        }
         arguments.append(contentsOf: ["--", server])
+        let preferredResolve = resolvedEndpoint?.resolveArgument
         auth.startWithOutcome(
             executable: SecureRuntime.executable,
             arguments: arguments,
@@ -137,7 +147,8 @@ final class HelperVPNTransport: NSObject, VPNTransport {
                         work.authOutput.removeAll()
                         let request = try result.request(
                             protocolType: work.config.effectiveProtocol,
-                            originalServer: server
+                            originalServer: server,
+                            preferredResolve: preferredResolve
                         )
                         self.startTunnel(work, request: request)
                     } catch {
@@ -365,6 +376,31 @@ final class HelperVPNTransport: NSObject, VPNTransport {
             try stopTask.run()
             stopTask.waitUntilExit()
         } catch {}
+    }
+
+    nonisolated private static func invokeHelperPrepareGateway(ip: String) {
+        guard VPNEndpointResolver.isValidIPv4(ip) else { return }
+        let invocation = helperInvocation(arguments: [HelperConstants.prepareGatewayFlag, ip])
+        let task = Process()
+        task.executableURL = invocation.executable
+        task.arguments = invocation.arguments
+        task.environment = SecureRuntime.environment
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        do {
+            try task.run()
+            task.waitUntilExit()
+        } catch {}
+    }
+
+    nonisolated private static func resolveAndPrepareBestEndpoint(for server: String) -> ResolvedGatewayEndpoint? {
+        guard let endpoint = VPNEndpointResolver.resolveBestEndpoint(for: server) else {
+            return nil
+        }
+        if !endpoint.isIPv6 {
+            invokeHelperPrepareGateway(ip: endpoint.ip)
+        }
+        return endpoint
     }
 
     nonisolated static func isInstalledRuntimeMatchingBundle(

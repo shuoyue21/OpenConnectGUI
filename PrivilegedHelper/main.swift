@@ -186,6 +186,9 @@ private func runTunnelSession(_ session: String) -> Never {
         let requestData = try readStdinBounded(maxBytes: 131072)
         let request = try JSONDecoder().decode(TunnelRequest.self, from: requestData)
         try request.validate()
+        if let gatewayIP = VPNEndpointResolver.extractGatewayIP(from: request) {
+            VPNEndpointResolver.installDirectGatewayRoute(ip: gatewayIP)
+        }
 
         let runDir = SecureRuntime.sessionRunDir
         try FileManager.default.createDirectory(
@@ -391,6 +394,21 @@ if args == [HelperConstants.checkReadyFlag] {
         exit(VPNScriptRunner.executeFixedScript(scriptURL: SecureRuntime.script))
     } catch {
         fputs("OpenConnectHelper script runner: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+} else if args.count == 2 && args[0] == HelperConstants.prepareGatewayFlag {
+    do {
+        guard elevateToRootIfPossible() else {
+            throw VPNServiceError.message("The VPN helper must run as root.")
+        }
+        try SecureRuntime.validateInstallation()
+        guard VPNEndpointResolver.isValidIPv4(args[1]) else {
+            throw VPNServiceError.invalidRequest
+        }
+        _ = VPNEndpointResolver.installDirectGatewayRoute(ip: args[1])
+        exit(0)
+    } catch {
+        fputs("OpenConnectHelper: \(error.localizedDescription)\n", stderr)
         exit(1)
     }
 } else if args.count == 2 && args[0] == HelperConstants.tunnelSessionFlag {

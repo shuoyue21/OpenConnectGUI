@@ -18,14 +18,20 @@ struct AuthenticationResult {
         self.fields = fields
     }
 
-    func request(protocolType: String, originalServer: String) throws -> TunnelRequest {
+    func request(protocolType: String, originalServer: String, preferredResolve: String? = nil) throws -> TunnelRequest {
         let server = fields["CONNECT_URL"] ?? fields["HOST"] ?? originalServer
+        let authResolve = fields["RESOLVE"].flatMap { $0.isEmpty ? nil : $0 }
+        let effectiveResolve = VPNEndpointResolver.selectResolve(
+            authResolve: authResolve,
+            preferredResolve: preferredResolve,
+            targetServer: server
+        )
         let request = TunnelRequest(
             server: TunnelRequest.normalizeServer(server),
             protocolType: protocolType,
             cookie: fields["COOKIE"] ?? "",
             fingerprint: fields["FINGERPRINT"] ?? "",
-            resolve: fields["RESOLVE"].flatMap { $0.isEmpty ? nil : $0 }
+            resolve: effectiveResolve
         )
         try request.validate()
         return request
