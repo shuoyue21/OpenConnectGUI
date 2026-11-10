@@ -4,9 +4,20 @@
 //
 //  Created by Mikołaj Jucha on 23/04/2025.
 //
+import Foundation
 import UserNotifications
 
-struct NotificationManager {
+final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationManager()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+
     static func postConnectionSuccess(for name: String) {
         let content = UNMutableNotificationContent()
         content.title = "VPN Connected"
@@ -14,25 +25,26 @@ struct NotificationManager {
         content.sound = .default
 
         let req = UNNotificationRequest(
-            identifier: "vpn.connected.\(name)",
+            identifier: "vpn.status.\(name)",
             content: content,
-            trigger: nil // natychmiastowe
+            trigger: nil
         )
 
         UNUserNotificationCenter.current().add(req) { err in
             if let e = err { print("Notification error:", e) }
         }
     }
+
     static func postConnectionDisconnected(for name: String) {
         let content = UNMutableNotificationContent()
-        content.title = "VPN Disconected"
+        content.title = "VPN Disconnected"
         content.body  = "You are now disconnected from \(name)."
         content.sound = .default
 
         let req = UNNotificationRequest(
-            identifier: "vpn.disconected.\(name)",
+            identifier: "vpn.status.\(name)",
             content: content,
-            trigger: nil // natychmiastowe
+            trigger: nil
         )
 
         UNUserNotificationCenter.current().add(req) { err in
