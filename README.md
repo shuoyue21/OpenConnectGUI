@@ -1,84 +1,109 @@
-Poniżej pełny, sprawdzony plik README.md, który możesz skopiować w całości — nie powinien już „rozjeżdżać się” na GitHubie. Zwróć uwagę na poprawne otwarcie i zamknięcie bloków kodu.
-
 # OpenconnectGUI
 
-![macOS](https://img.shields.io/badge/platform-macOS-blue)
+A native macOS SwiftUI frontend for OpenConnect, with saved VPN profiles,
+Keychain credentials, connection logs and automatic reconnect.
 
-**OpenconnectGUI** is a native macOS frontend for [openconnect](https://www.infradead.org/openconnect/), built in SwiftUI.  
-It lets you manage multiple VPN profiles, securely store credentials in macOS Keychain, and connect via `sudo` using a simple GUI.
+Requires macOS 15.4 or later. The current repair targets the user's macOS 27.2
+runtime; the Xcode deployment target remains 15.4.
 
----
+## Build and test
 
-## ✨ Features
+```sh
+swift test --scratch-path /tmp/OpenConnectGUI-tests
+xcodebuild -project OpenconnectGUI.xcodeproj -scheme OpenconnectGUI \
+  -configuration Debug -derivedDataPath /tmp/OpenConnectGUI-build \
+  CODE_SIGNING_ALLOWED=NO build
+```
 
-- Manage multiple VPN configurations  
-- One-click connection using `sudo openconnect`  
-- Support for `gp`, `anyconnect`, `pulse`, and other protocols  
-- Store VPN and sudo credentials securely in macOS Keychain  
-- Real-time logs and connection status indicator  
-- Clean and modern SwiftUI interface for macOS  
+These commands build the app and helper and run isolated regression tests. They
+do not install/register a service, change sudoers or connect a real VPN. The
+Swift package tests use temporary profile files and in-memory credentials.
 
----
+## Install a build that can connect
 
-## 📦 Installation
+VPN tunnel creation now runs through a restricted `SMAppService` LaunchDaemon.
+The app no longer installs broad `NOPASSWD` rules or launches Homebrew binaries
+as root. Authentication runs as the user; only the resulting cookie crosses the
+XPC boundary to the helper. Both sides verify the other's code signature.
 
-1. Download the latest `.app` from the [Releases](https://github.com/AshenMJ/OpenconnectGUI/releases)  
-2. Move it to your `/Applications` folder  
-3. If macOS blocks it:
-   - Right-click the app → **Open** → Confirm  
-   - Or remove quarantine attribute via Terminal:
-     ```bash
-     xattr -d com.apple.quarantine /Applications/OpenconnectGUI.app
-     ```
+The app, helper, OpenConnect libraries and network script must be installed as
+root-owned files under:
 
----
+```
+/Library/Application Support/OpenConnectGUI/OpenconnectGUI.app
+```
 
-## 🔧 Requirements
+Use a trusted OpenConnect distribution on the build machine (for example,
+`brew install openconnect`) and a **Developer ID Application** signing identity:
 
-- macOS 12.0 or newer (tested on macOS Sequoia)  
-- `openconnect` installed via [Homebrew](https://brew.sh/):
-  ```bash
-  brew install openconnect
+```sh
+python3 Scripts/package_app.py \
+  --app /tmp/OpenConnectGUI-build/Build/Products/Debug/OpenconnectGUI.app \
+  --openconnect /opt/homebrew/bin/openconnect \
+  --vpnc-script /opt/homebrew/etc/vpnc/vpnc-script \
+  --sign-identity 'Developer ID Application: YOUR NAME (TEAMID)' \
+  --installer-identity 'Developer ID Installer: YOUR NAME (TEAMID)' \
+  --output /tmp/OpenConnectGUI-package
+```
 
-🔒 Optional:
-To allow openconnect to run without prompting for a sudo password, add this line to your sudoers file (sudo visudo):
+Use a new output directory for each invocation. The script copies the recursive
+dylib dependency closure, removes external runtime library paths, signs the
+runtime/helper/app, verifies signatures and runs `openconnect --version` as the
+ordinary build user. Then it creates `OpenconnectGUI.pkg`; it never installs it.
+The installer identity is optional for local testing; use it for distribution.
 
-your_username ALL=(ALL) NOPASSWD: /opt/homebrew/bin/openconnect
+Before distribution, submit the signed package using your configured Apple
+notarization workflow and staple the notarization ticket. LaunchDaemons require
+properly signed/notarized applications. Keep the included third-party notices
+and supply corresponding source/relinking materials as required by the bundled
+OpenConnect/dependency licenses.
 
+Install the package, then open the protected application:
 
+```sh
+open '/Library/Application Support/OpenConnectGUI/OpenconnectGUI.app'
+```
 
-⸻
+At the first connection, allow its background service in System Settings →
+General → Login Items & Extensions, then connect again. The application's
+**VPN Background Service Settings…** menu opens that settings page. Keep a Finder
+alias in Applications or the Dock if desired; running a separately copied
+bundle is intentionally rejected.
 
-🔐 Security & Credentials
-	•	VPN and sudo passwords can be saved in the macOS Keychain
-	•	All data is stored locally and never transmitted
-	•	The app does not collect telemetry or send data elsewhere
+Without a signing identity, verify runtime packaging without creating an
+installable privileged-service build:
 
-⸻
+```sh
+python3 Scripts/package_app.py \
+  --app /tmp/OpenConnectGUI-build/Build/Products/Debug/OpenconnectGUI.app \
+  --openconnect /opt/homebrew/bin/openconnect \
+  --vpnc-script /opt/homebrew/etc/vpnc/vpnc-script \
+  --verify-runtime-only --output /tmp/OpenConnectGUI-runtime-check
+```
 
-🧑‍💻 Development
+## Credentials and upgrades
 
-Build from source:
+- “Remember Credentials” alone controls Keychain persistence. An unremembered
+  password remains in memory only for its connection/reconnect cycle.
+- Editing a password updates the next reconnect. Changing server/user/protocol
+  invalidates the previous credential cache and pending reconnects.
+- Credentials are stored per profile UUID. Existing remembered Internet Password
+  entries are imported once; legacy entries are preserved because they can also
+  belong to another profile/application. Forgotten entries are not reimported.
+- After the signed helper is available, it removes only the exact legacy
+  `/etc/sudoers.d/openconnectgui` rule produced by this application for the
+  connecting user. Customized rules and other users' rules are preserved with
+  a log message. No new sudoers rule is installed.
+- Updating an installed helper/plist may require unregistering and registering
+  the service again; see [the validation guide](docs/validation.md).
 
-git clone https://github.com/AshenMJ/OpenconnectGUI.git
-cd OpenconnectGUI
-open OpenconnectGUI.xcodeproj
+The current UI supports noninteractive username/password authentication. It
+does not provide interactive OTP, SAML/browser or certificate-selection flows.
+The packaged CA bundle defaults to `/etc/ssl/cert.pem` from the build machine;
+use `--ca-bundle` when packaging for an organization with a private CA. Certificate
+validation is retained; the root tunnel pins the certificate returned by user
+authentication. External vpnc-script hooks are disabled in the packaged runtime.
 
-Then in Xcode:
-	•	Select the macOS target
-	•	Run with Cmd + R
+## License
 
-⚠️ Ensure App Sandbox is disabled to allow launching openconnect with sudo.
-
-⸻
-
-📃 License
-
-This project is licensed under the MIT License. See LICENSE for details.
-
-⸻
-
-⚠️ Disclaimer
-
-This project is not affiliated with the official OpenConnect project or Cisco.
-Use at your own risk—make sure you comply with your organization’s VPN policies.
+See [LICENSE](LICENSE). OpenConnect and bundled libraries retain their own licenses.
