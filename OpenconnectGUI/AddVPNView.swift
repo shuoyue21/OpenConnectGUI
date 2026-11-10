@@ -11,21 +11,8 @@ struct VPNProtocolOption: Identifiable {
     let id = UUID()
     let label: String
     let value: String
-}
 
-/// A sheet that allows users to enter and save a new VPN configuration.
-struct AddVPNView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var store: VPNConfigurationStore
-
-    @State private var name = ""
-    @State private var serverAddress = ""
-    @State private var username = ""
-    @State private var protocolType: String = "anyconnect"
-    @State private var rememberCredentials = false
-    @State private var sudoPassword = ""
-    
-    private let supportedProtocols: [VPNProtocolOption] = [
+    static let supportedProtocols: [VPNProtocolOption] = [
         VPNProtocolOption(label: "Cisco AnyConnect", value: "anyconnect"),
         VPNProtocolOption(label: "Juniper Network Connect", value: "nc"),
         VPNProtocolOption(label: "Pulse Secure", value: "pulse"),
@@ -34,50 +21,79 @@ struct AddVPNView: View {
         VPNProtocolOption(label: "Fortinet FortiGate", value: "fortinet"),
         VPNProtocolOption(label: "Array Networks", value: "array")
     ]
+}
+
+/// A sheet that allows users to enter and save a new VPN configuration.
+struct AddVPNView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var store: VPNConfigurationStore
+
+    @State private var name = ""
+    @State private var serverAddress = ""
+    @State private var username = ""
+    @State private var authGroup = ""
+    @State private var protocolType: String = "anyconnect"
+    @State private var rememberCredentials = true
+    @State private var autoReconnect = true
+    @State private var vpnPassword = ""
+    @State private var errorMessage: String?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Skonfiguruj połączenie")
+            Text("Configure Connection")
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding(.bottom, 8)
 
             Form {
-                TextField("Nazwa połączenia", text: $name)
-                TextField("Adres serwera", text: $serverAddress)
-                TextField("Nazwa użytkownika", text: $username)
+                TextField("Connection Name", text: $name)
+                TextField("Server Address", text: $serverAddress)
+                TextField("Username", text: $username)
+                TextField("Group (optional)", text: $authGroup)
                 
-                Picker("Protokół", selection: $protocolType) {
-                    ForEach(supportedProtocols) { option in
+                Picker("Protocol", selection: $protocolType) {
+                    ForEach(VPNProtocolOption.supportedProtocols) { option in
                         Text(option.label).tag(option.value)
                     }
                 }
-                .pickerStyle(MenuPickerStyle())
-                SecureField("Hasło administratora", text: $sudoPassword)
-                Toggle("Zapamiętaj poświadczenia", isOn: $rememberCredentials)
+                .pickerStyle(.menu)
+                SecureField("VPN Password (optional)", text: $vpnPassword)
+                    .disabled(!rememberCredentials)
+                Toggle("Remember Credentials", isOn: $rememberCredentials)
+                    .onChange(of: rememberCredentials) { _, remember in if !remember { vpnPassword = "" } }
+                if !rememberCredentials { Text("You will enter your password when connecting.").font(.caption) }
+                Toggle("Auto Reconnect", isOn: $autoReconnect)
             }
 
             HStack {
                 Spacer()
-                Button("Anuluj") {
-                    presentationMode.wrappedValue.dismiss()
+                Button("Cancel") {
+                    dismiss()
                 }
-                Button("Zapisz") {
+                Button("Save") {
+                    let shouldRemember = rememberCredentials
                     let newConfig = VPNConfiguration(
                         name: name,
                         serverAddress: serverAddress,
                         username: username,
                         protocolType: protocolType,
-                        rememberCredentials: rememberCredentials
+                        authGroup: authGroup,
+                        rememberCredentials: shouldRemember,
+                        autoReconnect: autoReconnect
                     )
-                    store.add(newConfig)
-                    presentationMode.wrappedValue.dismiss()
+                    do {
+                        try store.add(newConfig, password: vpnPassword)
+                        dismiss()
+                    } catch { errorMessage = error.localizedDescription }
                 }
                 .disabled(name.isEmpty || serverAddress.isEmpty || username.isEmpty)
             }
             .padding(.top)
         }
         .padding()
-        .frame(width: 400, height: 360)
+        .frame(width: 420)
+        .alert("Could not save VPN", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+            Button("OK") { errorMessage = nil }
+        } message: { Text(errorMessage ?? "") }
     }
 }

@@ -6,6 +6,26 @@
 	objectVersion = 77;
 	objects = {
 
+        F10000000000000000000001 /* OpenConnectHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = OpenConnectHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+        F10000000000000000000002 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
+        F10000000000000000000003 /* PrivilegedHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; path = PrivilegedHelper; sourceTree = "<group>"; };
+        F10000000000000000000004 /* Helper plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Support/mjucha.OpenconnectGUI.helper.plist; sourceTree = "<group>"; };
+        F10000000000000000000011 /* OpenConnect */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Support/OpenConnect; sourceTree = "<group>"; };
+        F10000000000000000000005 = {isa = PBXBuildFile; fileRef = F10000000000000000000001; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+        F10000000000000000000006 = {isa = PBXBuildFile; fileRef = F10000000000000000000004; };
+        F10000000000000000000012 = {isa = PBXBuildFile; fileRef = F10000000000000000000011; };
+        F10000000000000000000007 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = Contents/Library/HelperTools; dstSubfolderSpec = 1; files = (F10000000000000000000005, ); runOnlyForDeploymentPostprocessing = 0; };
+        F10000000000000000000008 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = Contents/Library/LaunchDaemons; dstSubfolderSpec = 1; files = (F10000000000000000000006, ); runOnlyForDeploymentPostprocessing = 0; };
+        F10000000000000000000009 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        F1000000000000000000000A = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        F1000000000000000000000B = {isa = PBXNativeTarget; buildConfigurationList = F1000000000000000000000E; buildPhases = (F10000000000000000000009, F1000000000000000000000A, ); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (F10000000000000000000002, F10000000000000000000003, ); name = OpenConnectHelper; productName = OpenConnectHelper; productReference = F10000000000000000000001; productType = "com.apple.product-type.tool"; };
+        F1000000000000000000000C = {isa = XCBuildConfiguration; buildSettings = {CLANG_COVERAGE_MAPPING = NO; CODE_SIGN_STYLE = Automatic; ENABLE_CODE_COVERAGE = NO; ENABLE_HARDENED_RUNTIME = YES; MACOSX_DEPLOYMENT_TARGET = 15.4; PRODUCT_BUNDLE_IDENTIFIER = mjucha.OpenconnectGUI.helper; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; SKIP_INSTALL = YES; }; name = Debug; };
+        F1000000000000000000000D = {isa = XCBuildConfiguration; buildSettings = {CLANG_COVERAGE_MAPPING = NO; CODE_SIGN_STYLE = Automatic; ENABLE_CODE_COVERAGE = NO; ENABLE_HARDENED_RUNTIME = YES; MACOSX_DEPLOYMENT_TARGET = 15.4; PRODUCT_BUNDLE_IDENTIFIER = mjucha.OpenconnectGUI.helper; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; SKIP_INSTALL = YES; }; name = Release; };
+        F1000000000000000000000E = {isa = XCConfigurationList; buildConfigurations = (F1000000000000000000000C, F1000000000000000000000D, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        F1000000000000000000000F = {isa = PBXContainerItemProxy; containerPortal = D09043122DB8C2D100CAEEB1; proxyType = 1; remoteGlobalIDString = F1000000000000000000000B; remoteInfo = OpenConnectHelper; };
+        F10000000000000000000010 = {isa = PBXTargetDependency; target = F1000000000000000000000B; targetProxy = F1000000000000000000000F; };
+
+
 /* Begin PBXContainerItemProxy section */
 		D09043292DB8C2D200CAEEB1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -75,6 +95,9 @@
 		D09043112DB8C2D100CAEEB1 = {
 			isa = PBXGroup;
 			children = (
+                F10000000000000000000002,
+                F10000000000000000000003,
+                F10000000000000000000004,
 				D090431C2DB8C2D100CAEEB1 /* OpenconnectGUI */,
 				D090432B2DB8C2D200CAEEB1 /* OpenconnectGUITests */,
 				D09043352DB8C2D200CAEEB1 /* OpenconnectGUIUITests */,
@@ -85,6 +108,7 @@
 		D090431B2DB8C2D100CAEEB1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+                F10000000000000000000001,
 				D090431A2DB8C2D100CAEEB1 /* OpenconnectGUI.app */,
 				D09043282DB8C2D200CAEEB1 /* OpenconnectGUITests.xctest */,
 				D09043322DB8C2D200CAEEB1 /* OpenconnectGUIUITests.xctest */,
@@ -102,12 +126,16 @@
 				D09043162DB8C2D100CAEEB1 /* Sources */,
 				D09043172DB8C2D100CAEEB1 /* Frameworks */,
 				D09043182DB8C2D100CAEEB1 /* Resources */,
+                F10000000000000000000007,
+                F10000000000000000000008,
 			);
 			buildRules = (
 			);
 			dependencies = (
+                F10000000000000000000010,
 			);
 			fileSystemSynchronizedGroups = (
+                F10000000000000000000002,
 				D090431C2DB8C2D100CAEEB1 /* OpenconnectGUI */,
 			);
 			name = OpenconnectGUI;
@@ -200,6 +228,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                F1000000000000000000000B,
 				D09043192DB8C2D100CAEEB1 /* OpenconnectGUI */,
 				D09043272DB8C2D200CAEEB1 /* OpenconnectGUITests */,
 				D09043312DB8C2D200CAEEB1 /* OpenconnectGUIUITests */,
@@ -212,6 +241,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                F10000000000000000000012,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,10 +306,12 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_COVERAGE_MAPPING = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				ENABLE_CODE_COVERAGE = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -340,10 +372,12 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_COVERAGE_MAPPING = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				ENABLE_CODE_COVERAGE = NO;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;

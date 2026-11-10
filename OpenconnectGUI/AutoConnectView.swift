@@ -12,7 +12,7 @@ struct AutoConnectView: View {
     let onConnect: () -> Void
 
     var body: some View {
-        Text("Łączenie z \(config.name)...")
+        Text("Connecting to \(config.name)...")
             .padding()
             .onAppear {
                 onConnect()

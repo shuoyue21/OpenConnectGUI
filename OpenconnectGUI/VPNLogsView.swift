@@ -1,84 +1,68 @@
 import SwiftUI
-import Combine
 
-/// Model zarządzający logami VPN.
-class VPNLogsViewModel: ObservableObject {
-    @Published var logs: [String] = []
-
-    private var logUpdateTimer: AnyCancellable?
-
-    init(initialLogs: [String] = []) {
-        self.logs = initialLogs
-        startUpdatingLogs()
-    }
-
-    /// Symuluje dodawanie nowych logów co sekundę.
-    private func startUpdatingLogs() {
-        logUpdateTimer = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let raw = "Log \(Date())"
-                let line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !line.isEmpty else { return }      // <— odrzucamy puste
-                DispatchQueue.main.async {
-                    self.logs.append(line)
-                    if self.logs.count > 500 {
-                        self.logs.removeFirst(self.logs.count - 500)
-                    }
-                }
-            }
-    }
-
-    deinit {
-        logUpdateTimer?.cancel()
-    }
-}
-
-/// Widok wyświetlający logi VPN.
+/// Displays real-time VPN connection logs with auto-scrolling, copy, and clear actions.
 struct VPNLogsView: View {
-    @StateObject private var viewModel: VPNLogsViewModel
+    @ObservedObject var connection: VPNConnectionState
     @Environment(\.dismiss) var dismiss
     @State private var showCopiedMessage = false
 
-    init(logs: [String] = []) {
-        _viewModel = StateObject(wrappedValue: VPNLogsViewModel(initialLogs: logs))
+    private var displayedLogs: [String] {
+        Array(connection.logs.suffix(200))
     }
 
     var body: some View {
         VStack(alignment: .leading) {
-            // Nagłówek
             HStack {
-                Text("Logi połączenia")
+                Text("Connection Logs")
                     .font(.headline)
                 Spacer()
-                Button("Zamknij") {
+                Button("Close") {
                     dismiss()
                 }
             }
 
             Divider()
 
-            // Obszar logów
-            ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(Array(viewModel.logs.suffix(200).enumerated()), id: \.offset) { _, line in
-                        Text(line)
-                            .font(.system(size: 12, design: .monospaced))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(displayedLogs.enumerated()), id: \.offset) { index, line in
+                            Text(line)
+                                .font(.system(size: 12, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .id(index)
+                        }
+                    }
+                    .padding(.bottom)
+                }
+                .onAppear {
+                    if !displayedLogs.isEmpty {
+                        proxy.scrollTo(displayedLogs.count - 1, anchor: .bottom)
                     }
                 }
-                .padding(.bottom)
+                .onChange(of: connection.logs.count) { _, _ in
+                    if !displayedLogs.isEmpty {
+                        proxy.scrollTo(displayedLogs.count - 1, anchor: .bottom)
+                    }
+                }
             }
 
-            // Akcje w stopce
             HStack {
+                Button("Clear") {
+                    connection.clearLogs()
+                }
+                .disabled(connection.logs.isEmpty)
+
                 Spacer()
-                Button("Skopiuj do schowka") {
+
+                Button("Copy to Clipboard") {
                     copyLogsToClipboard()
                 }
+                .disabled(connection.logs.isEmpty)
+
                 if showCopiedMessage {
-                    Text("✅ Skopiowano")
+                    Text("✅ Copied")
                         .font(.caption)
                         .foregroundColor(.green)
                         .transition(.opacity)
@@ -91,9 +75,8 @@ struct VPNLogsView: View {
         .frame(width: 500, height: 320)
     }
 
-    /// Kopiuje ostatnie logi do schowka.
     private func copyLogsToClipboard() {
-        let lastLogs = viewModel.logs.suffix(200).joined(separator: "\n")
+        let lastLogs = displayedLogs.joined(separator: "\n")
         
         #if os(macOS)
         NSPasteboard.general.clearContents()

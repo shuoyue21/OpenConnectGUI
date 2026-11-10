@@ -11,36 +11,51 @@ struct EditVPNView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: VPNConfigurationStore
     @State var config: VPNConfiguration
+    @State private var vpnPassword: String = ""
+    @State private var errorMessage: String?
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Edytuj konfigurację VPN")
+            Text("Edit VPN Configuration")
                 .font(.title2)
                 .padding(.top)
 
-            TextField("Nazwa połączenia", text: $config.name)
-            TextField("Adres serwera", text: $config.serverAddress)
-            TextField("Nazwa użytkownika", text: $config.username)
+            TextField("Connection Name", text: $config.name)
+            TextField("Server Address", text: $config.serverAddress)
+            TextField("Username", text: $config.username)
+            TextField(
+                "Group (optional)",
+                text: Binding(
+                    get: { config.authGroup ?? "" },
+                    set: { config.authGroup = $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+                )
+            )
 
-            Picker("Protokół", selection: $config.protocolType) {
-                Text("AnyConnect").tag("anyconnect" as String?)
-                Text("GlobalProtect").tag("gp" as String?)
-                Text("Pulse").tag("pulse" as String?)
-                Text("F5").tag("f5" as String?)
+            Picker("Protocol", selection: $config.protocolType) {
+                ForEach(VPNProtocolOption.supportedProtocols) { option in
+                    Text(option.label).tag(option.value as String?)
+                }
             }
 
-            Toggle("Zapamiętaj poświadczenia", isOn: $config.rememberCredentials)
+            SecureField("New VPN Password (leave blank to keep)", text: $vpnPassword)
+                .disabled(!config.rememberCredentials)
+
+            Toggle("Remember Credentials", isOn: $config.rememberCredentials)
+                .onChange(of: config.rememberCredentials) { _, remember in if !remember { vpnPassword = "" } }
+            Toggle("Auto Reconnect", isOn: $config.autoReconnect)
 
             HStack {
-                Button("Anuluj") {
+                Button("Cancel") {
                     dismiss()
                 }
 
                 Spacer()
 
-                Button("Zapisz zmiany") {
-                    store.update(config)
-                    dismiss()
+                Button("Save Changes") {
+                    do {
+                        try store.update(config, password: vpnPassword.isEmpty ? nil : vpnPassword)
+                        dismiss()
+                    } catch { errorMessage = error.localizedDescription }
                 }
                 .keyboardShortcut(.defaultAction)
             }
@@ -48,5 +63,8 @@ struct EditVPNView: View {
         }
         .padding()
         .frame(width: 400)
+        .alert("Could not save VPN", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+            Button("OK") { errorMessage = nil }
+        } message: { Text(errorMessage ?? "") }
     }
 }

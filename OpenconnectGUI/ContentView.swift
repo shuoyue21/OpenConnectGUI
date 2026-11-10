@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var store = VPNConfigurationStore()
+    @ObservedObject var store: VPNConfigurationStore
 
     var body: some View {
         VPNListView(store: store)
@@ -16,5 +16,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(store: VPNConfigurationStore())
 }
