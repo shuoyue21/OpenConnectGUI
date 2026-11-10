@@ -2,12 +2,12 @@
   {
     "source": "/opt/homebrew/Cellar/openconnect/9.21/bin/openconnect",
     "bundled": "bin/openconnect",
-    "source_sha256": "02eb8623feaea74a1ee67a84cbff9ac8660ab75aaa19a192af173be9f454dbd3"
+    "source_sha256": "d285352e007c31e2f0df46c57d9a20c0901c3617ff5aed980eeda2f3d7b977df"
   },
   {
     "source": "/opt/homebrew/Cellar/openconnect/9.21/lib/libopenconnect.5.dylib",
     "bundled": "lib/libopenconnect.5.dylib",
-    "source_sha256": "f0364117c1df9921444d4e3011e6cfe73def2ffe7083c1aca991d988a343d260"
+    "source_sha256": "fb80d94c4a0eb01e33471059258a86d98c96972e1cc4922902cb272910e13287"
   },
   {
     "source": "/opt/homebrew/Cellar/p11-kit/0.26.5/lib/libp11-kit.0.dylib",
