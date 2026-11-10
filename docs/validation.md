@@ -1,6 +1,6 @@
-# Repair architecture and validation
+# Architecture and Testing Guide
 
-## Lifecycle
+## Connection Lifecycle
 
 `VPNConnectionState` is isolated to the main actor and tracks three separate dimensions:
 process lifecycle, underlying network availability, and tunnel recovery state, deriving one
@@ -76,46 +76,11 @@ Run `swift test --scratch-path /tmp/OpenConnectGUI-tests`. Coverage includes:
 
 Build with the Xcode command in README to validate the GUI and helper targets.
 
-## macOS 27.2 integration checklist (requires signed installed build)
+## Manual Integration Checklist
 
-1. Package with Developer ID identities, notarize/staple as appropriate, install,
-   then open the protected app. Verify that a missing/refused background approval
-   produces an actionable error without an automatic authorization retry loop.
-2. Approve the service in System Settings. Verify successful password login,
-   routes, DNS and actual VPN traffic against a test gateway.
-3. Cancel during authorization, authentication and tunnel startup; verify no
-   orphan root OpenConnect child remains. Delete a connecting profile and quit
-   the app during connection/connection teardown as additional cases.
-4. Disconnect/reconnect rapidly. Delay the old process's exit and verify the new
-   connection still has correct status, logs and control.
-5. Change network availability and confirm reconnect. A rejected password must
-   stop retries until explicit credential update or manual retry.
-6. Edit remembered credentials and confirm the next authentication uses them.
-   Confirm unremembered credentials never create a profile Keychain item.
-7. A differently signed XPC client must be rejected, and a stop request on one
-   client's connection must not affect another client's child. Test this against
-   disposable sessions; do not signal unrelated processes.
-8. Test upgrade from an exact legacy sudoers rule and from a customized rule;
-   only the former may be removed. Keep a backup for this integration test.
-9. During an application upgrade, stop VPN sessions and unregister the old
-   SMAppService before replacing the signed app/helper/plist, then register the
-   updated service. This avoids launchd keeping an outdated helper loaded.
-
-Build/unit/runtime-smoke success is not evidence that these system/VPN integration
-checks have passed. They require an installed signed application and a gateway.
-
-## Checks performed in this repair (2026-11-07)
-
-- Xcode Debug application and helper build: passed.
-- Xcode `build-for-testing`, including unit/UI test compilation: passed.
-- Swift package lifecycle/protocol/process tests: 24 regression tests; see the final
-  test output for the current run. These tests use mocked Keychain/XPC boundaries
-  and real unprivileged child processes; they do not launch the privileged service.
-- Runtime packaging smoke test: dependency copying/load-path rewriting/signature
-  integrity check and the bundled OpenConnect 9.21 `--version` invocation passed.
-- The current signing-identity check found zero valid identities. An ad-hoc
-  hardened OpenConnect failed macOS library validation, so installable packages
-  require Developer ID signing; runtime-only verification remains unprivileged.
-- No signed installer was deployed, no system sudoers file was modified, and no
-  real gateway/network routing test was performed. Background approval, XPC peer
-  rejection, legacy-rule migration and tunnel teardown remain integration checks.
+1. Verify initial administrator helper provisioning on a clean setup and confirm that cancelling the prompt reports an actionable error without looping.
+2. Verify successful password login, routes, DNS, and actual VPN traffic against a live gateway.
+3. Cancel during authorization, authentication, and tunnel startup; verify no orphan root OpenConnect child process remains. Delete a connecting profile and quit the app during connection/teardown as additional cases.
+4. Disconnect/reconnect rapidly. Delay the old process's exit and verify the new connection still has accurate status, logs, and control.
+5. Change network availability and confirm automatic reconnect. A rejected password must stop retries until explicit credential update or manual retry.
+6. Edit remembered credentials and confirm the next authentication uses them. Confirm unremembered credentials never persist to disk.
