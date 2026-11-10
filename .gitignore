@@ -1,6 +1,21 @@
+# macOS
 .DS_Store
+
+# SwiftPM & Xcode Build
 .build/
+.swiftpm/
 build/
+DerivedData/
 *.xcresult
+
+# Xcode User Data
+xcuserdata/
+*.xcuserstate
+
+# IDEs
+.idea/
+*.iml
+
+# Python
 __pycache__/
 *.pyc

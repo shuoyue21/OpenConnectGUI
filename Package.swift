@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "OpenConnectCore", targets: ["OpenConnectCore"])],
     targets: [
         .target(name: "OpenConnectCore", path: ".", exclude: [
-            "OpenconnectGUI.xcodeproj", "OpenconnectGUITests", "OpenconnectGUIUITests", "Release", "PrivilegedHelper", "Support", "Scripts", "docs", "README.md", "LICENSE",
+            "OpenconnectGUI.xcodeproj", "OpenconnectGUITests", "OpenconnectGUIUITests", "PrivilegedHelper", "Support", "Scripts", "docs", "README.md", "LICENSE",
             "OpenconnectGUI/AddVPNView.swift", "OpenconnectGUI/AutoConnectView.swift", "OpenconnectGUI/ConnectVPNView.swift",
             "OpenconnectGUI/ConnectionRow.swift", "OpenconnectGUI/ContentView.swift", "OpenconnectGUI/EditVPNView.swift",
             "OpenconnectGUI/OpenconnectGUIApp.swift", "OpenconnectGUI/VPNListView.swift", "OpenconnectGUI/VPNLogsView.swift",
