@@ -1,0 +1,72 @@
+[
+  {
+    "source": "/opt/homebrew/Cellar/openconnect/9.21/bin/openconnect",
+    "bundled": "bin/openconnect",
+    "source_sha256": "02eb8623feaea74a1ee67a84cbff9ac8660ab75aaa19a192af173be9f454dbd3"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/openconnect/9.21/lib/libopenconnect.5.dylib",
+    "bundled": "lib/libopenconnect.5.dylib",
+    "source_sha256": "f0364117c1df9921444d4e3011e6cfe73def2ffe7083c1aca991d988a343d260"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/p11-kit/0.26.5/lib/libp11-kit.0.dylib",
+    "bundled": "lib/libp11-kit.0.dylib",
+    "source_sha256": "d482e5c96278dedd653287d1fe8d456657c8566cdd9d7822d31f2b35e60a0309"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/stoken/0.93_2/lib/libstoken.1.dylib",
+    "bundled": "lib/libstoken.1.dylib",
+    "source_sha256": "0ffa23cdcb8f40ad8aece0779f1aa06570194e2839915293251914b4b213a77f"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/gnutls/3.8.13_2/lib/libgnutls.30.dylib",
+    "bundled": "lib/libgnutls.30.dylib",
+    "source_sha256": "20aab8f12c487059f8805ffe6c830d44b7c32c6e2b66e01014b6c51550868770"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/nettle/4.0/lib/libhogweed.7.0.dylib",
+    "bundled": "lib/libhogweed.7.0.dylib",
+    "source_sha256": "87470a654b0e4bca27fd7e5bad7ca4d80afa1c7b16df68080ea2aa2d951a4509"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib",
+    "bundled": "lib/libgmp.10.dylib",
+    "source_sha256": "14123464af436d67ef69114810aa9e1e74de50e4097166fe8c110397b3ba6961"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/gettext/1.0/lib/libintl.8.dylib",
+    "bundled": "lib/libintl.8.dylib",
+    "source_sha256": "0c6d618e75fea85cc3d631e164a71766fba9341d19ce1f723300c52e63037c51"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/nettle/4.0/lib/libnettle.9.0.dylib",
+    "bundled": "lib/libnettle.9.0.dylib",
+    "source_sha256": "7ff68f13e9b15aee00ced345fd78f2547d8aa2a9059c6735bba51d10c0c82a0f"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/libidn2/2.3.8/lib/libidn2.0.dylib",
+    "bundled": "lib/libidn2.0.dylib",
+    "source_sha256": "1d3a1783adaa35e6c10bedbb429011e20b69a7f72ab6ace1b03751761cc09165"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/libunistring/1.4.2/lib/libunistring.5.dylib",
+    "bundled": "lib/libunistring.5.dylib",
+    "source_sha256": "bf3cdac18180e9ccb4a03ec680c8779283960872f2a3308c2ff5b642ebf55681"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/libtasn1/4.21.0/lib/libtasn1.6.dylib",
+    "bundled": "lib/libtasn1.6.dylib",
+    "source_sha256": "842043943eea48f94d7e33561b4451b9ac027491900aae39099df712e2cb3653"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/libtomcrypt/1.18.2_1/lib/libtomcrypt.1.dylib",
+    "bundled": "lib/libtomcrypt.1.dylib",
+    "source_sha256": "a45860168501910fbbe4153483ac484cce404dfbcab3d8f43dd98ddb9b04416d"
+  },
+  {
+    "source": "/opt/homebrew/Cellar/libtommath/1.3.0/lib/libtommath.1.dylib",
+    "bundled": "lib/libtommath.1.dylib",
+    "source_sha256": "39b454177f44631b1a7d6f66789b073cbf7f8b93a4d9694b946f27a8af71b253"
+  }
+]
